@@ -48,7 +48,7 @@ http://localhost:5555 {
             password password
         }
         
-        # Or shortcut -> get_certificate pfw test.pfx password
+        # Or shortcut -> get_certificate pfx test.pfx password
     }
     encode zstd gzip
     root * /var/www/html

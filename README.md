@@ -22,12 +22,11 @@ This command compiles Caddy with the PFX certificates module included.
 
 ## Usage
 
-Follow these steps to utilize the image processing capabilities:
+Follow these steps to utilize the module capabilities:
 
 1. Install Caddy and libvips on your system.
 2. Build Caddy with the PFX certificates module using xcaddy.
 3. Configure your Caddyfile to load PFX certificates for specific routes or sites.
-4. Start Caddy, and access your images with processing options via URL query parameters.
 
 ## Example Caddyfile
 ```plaintext
@@ -58,7 +57,7 @@ http://localhost:5555 {
 
 ## Development
 
-To contribute to the development of Caddy Image Processor, follow these steps:
+To contribute to the development of this module, follow these steps:
 
 1. Make sure you have Go installed on your system.
 2. Clone this repository to your local machine:

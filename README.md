@@ -64,17 +64,8 @@ Your can see more information in the [official documentation for caddy](https://
 
 ## Example Caddyfile
 ```plaintext
-{
-	on_demand_tls {
-		ask http://localhost:5555/
-	}
-}
 
-http://localhost:5555 {
-	respond 200
-}
-
-:443 {
+https://your-domain {
     tls {
         get_certificate pfx {
             path test.pfx

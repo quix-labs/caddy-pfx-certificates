@@ -9,6 +9,7 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/certmagic"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/pkcs12"
 	"os"
 	"time"
@@ -26,7 +27,8 @@ type PfxCertGetter struct {
 	CacheCertName string
 	CachePkName   string
 
-	ctx caddy.Context
+	ctx    caddy.Context
+	logger *zap.Logger
 }
 
 func (PfxCertGetter) CaddyModule() caddy.ModuleInfo {
@@ -38,6 +40,8 @@ func (PfxCertGetter) CaddyModule() caddy.ModuleInfo {
 
 func (getter *PfxCertGetter) Provision(ctx caddy.Context) error {
 	getter.ctx = ctx
+	getter.logger = ctx.Logger()
+
 	if getter.Path == "" {
 		return fmt.Errorf("path is required")
 	}
@@ -57,10 +61,11 @@ func (getter *PfxCertGetter) Provision(ctx caddy.Context) error {
 
 func (getter PfxCertGetter) GetCertificate(ctx context.Context, hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 	storage := getter.ctx.Storage()
-
 	if !storage.Exists(ctx, getter.CachePkName) || !storage.Exists(ctx, getter.CacheCertName) {
 		err := getter.GenerateParsedKeys(ctx)
 		if err != nil {
+
+			getter.logger.Error("failed to load pfx certificate", zap.Error(err))
 			return nil, err
 		}
 	}

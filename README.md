@@ -4,29 +4,63 @@
 
 This repository contains a CaddyServer module for loading PFX certificates on-demand.
 
-## Building with xcaddy
 
-Before building the module, ensure you have `xcaddy` installed on your system. You can install it using the following command:
+## Installation and Configuration
 
-```bash
-go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-```
+### Using Docker
 
-To build this module into Caddy, run the following command:
+- Pull the Docker image from the GitHub Container Registry:
+    ```bash
+    docker pull ghcr.io/quix-labs/caddy-pfx-certificates:latest
+    ```
 
-```bash
-xcaddy build --with github.com/quix-labs/caddy-pfx-certificates
-```
+### Using xcaddy
 
-This command compiles Caddy with the PFX certificates module included.
+- Before building the module, ensure you have `xcaddy` installed on your system. You can install it using the following
+  command:
+
+  ```bash
+  go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+  ```
+
+- To build this module into Caddy, run the following command:
+
+  ```bash
+  CGO_ENABLED=1 xcaddy build --with github.com/quix-labs/caddy-pfx-certificates
+  ```
+
+  This command compiles Caddy with the image processing module included.
+
+
+### Using prebuilt assets
+
+- You can also install the tool using release assets.
+
+  Download the appropriate package from the [Releases page](https://github.com/quix-labs/caddy-pfx-certificates/releases), and then follow the instructions provided for your specific platform.
+
+
 
 ## Usage
 
-Follow these steps to utilize the module capabilities:
+### Using Docker
 
-1. Install Caddy and libvips on your system.
-2. Build Caddy with the PFX certificates module using xcaddy.
-3. Configure your Caddyfile to load PFX certificates for specific routes or sites.
+```bash
+docker run -p 80:80 -p 443:443 \
+  -v $PWD/Caddyfile:/etc/caddy/Caddyfile -d \
+  -v $PWD/test.pfx:/srv/test.pfx -d \
+  ghcr.io/quix-labs/caddy-pfx-certificates:latest
+```
+
+Your can see more information in the [official docker documentation for caddy](https://hub.docker.com/_/caddy)
+
+### Using xcaddy build / prebuilt assets
+
+```bash
+/path/to/your/caddy run --config /etc/caddy/Caddyfile
+```
+
+Your can see more information in the [official documentation for caddy](https://caddyserver.com/docs/build#package-support-files-for-custom-builds-for-debianubunturaspbian)
+
 
 ## Example Caddyfile
 ```plaintext

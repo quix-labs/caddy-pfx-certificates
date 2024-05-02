@@ -3,4 +3,5 @@ caddy
 .idea
 out
 dist/
+/build
 test.pfx

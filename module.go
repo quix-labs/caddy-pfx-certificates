@@ -19,9 +19,11 @@ func init() {
 	caddy.RegisterModule(PfxCertGetter{})
 }
 
+// PfxCertGetter allow user to set path to .pfx file to load TLS certificate
 type PfxCertGetter struct {
 	// The path to file with domain-certificate dictionary. Required.
-	Path     string `json:"path,omitempty"`
+	Path string `json:"path,omitempty"`
+	// The password used to decode pfx file. Required.
 	Password string `json:"password,omitempty"`
 
 	CacheCertName string

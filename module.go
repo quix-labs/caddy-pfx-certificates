@@ -64,7 +64,6 @@ func (getter PfxCertGetter) GetCertificate(ctx context.Context, hello *tls.Clien
 	if !storage.Exists(ctx, getter.CachePkName) || !storage.Exists(ctx, getter.CacheCertName) {
 		err := getter.GenerateParsedKeys(ctx)
 		if err != nil {
-
 			getter.logger.Error("failed to load pfx certificate", zap.Error(err))
 			return nil, err
 		}

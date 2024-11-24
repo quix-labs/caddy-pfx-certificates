@@ -76,7 +76,7 @@ func (getter *PfxCertGetter) GetCertificate(ctx context.Context, hello *tls.Clie
 	storage := getter.ctx.Storage()
 
 	if !storage.Exists(ctx, getter.CacheCertName) {
-		err := getter.GenerateParsedKeys(ctx)
+		err := getter.GenerateFullPEM(ctx)
 		if err != nil {
 			getter.logger.Error("failed to decode pfx certificate", zap.Error(err))
 			return nil, err
@@ -180,7 +180,7 @@ func (getter *PfxCertGetter) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 	return nil
 }
 
-func (getter *PfxCertGetter) GenerateParsedKeys(ctx context.Context) error {
+func (getter *PfxCertGetter) GenerateFullPEM(ctx context.Context) error {
 	storage := getter.ctx.Storage()
 
 	// Read the PFX file
@@ -204,10 +204,13 @@ func (getter *PfxCertGetter) GenerateParsedKeys(ctx context.Context) error {
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey.(*rsa.PrivateKey)),
 	})...)
 
-	// Combine leaf and intermediates from PFX and fetch the full chain automatically
-	chain, err := getCertificateChain(append([]*x509.Certificate{certificate}, caCerts...))
-	if err != nil {
-		return err
+	// Combine leaf and intermediates from PFX
+	chain := append([]*x509.Certificate{certificate}, caCerts...)
+	if *getter.FetchFullChain {
+		// Fetch the full chain automatically is certificates missing
+		if chain, err = getCertificateChain(chain); err != nil {
+			return err
+		}
 	}
 
 	// Append all certificates

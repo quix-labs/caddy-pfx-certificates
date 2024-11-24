@@ -70,6 +70,10 @@ https://your-domain {
         get_certificate pfx {
             path test.pfx
             password password
+            
+            # If set to false, only the certificates from the .pfx file will be sent. 
+            # If set to true (default), all the intermediate certificates will be downloaded, including those up to the root CA.
+            fetch_full_chain true 
         }
         
         # Or shortcut -> get_certificate pfx test.pfx password

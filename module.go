@@ -23,10 +23,12 @@ func init() {
 
 // PfxCertGetter allow user to set path to .pfx file to load TLS certificate
 type PfxCertGetter struct {
-	// The path to file with domain-certificate dictionary. Required.
+	// Path to your .pfx file.
 	Path string `json:"path,omitempty"`
-	// The password used to decode pfx file. Required.
+	// Password used to decode pfx file. Required.
 	Password string `json:"password,omitempty"`
+	// FetchFullChain allows Caddy server to automatically download the certificate chain.
+	FetchFullChain *bool `json:"fetch_full_chain,omitempty"`
 
 	CacheCertName string
 
@@ -49,6 +51,11 @@ func (getter *PfxCertGetter) Provision(ctx caddy.Context) error {
 		return fmt.Errorf("path is required")
 	}
 
+	if getter.FetchFullChain == nil {
+		tmp := true
+		getter.FetchFullChain = &tmp
+	}
+
 	// Get the modification time of the file
 	fileInfo, err := os.Stat(getter.Path)
 	if err != nil {
@@ -56,7 +63,11 @@ func (getter *PfxCertGetter) Provision(ctx caddy.Context) error {
 	}
 	modTime := fileInfo.ModTime()
 
-	getter.CacheCertName = getter.Path + "." + modTime.Format(time.RFC3339) + "-chain+pkey.pem"
+	if *getter.FetchFullChain {
+		getter.CacheCertName = getter.Path + "." + modTime.Format(time.RFC3339) + "-fullchain+pkey.pem"
+	} else {
+		getter.CacheCertName = getter.Path + "." + modTime.Format(time.RFC3339) + "-chain+pkey.pem"
+	}
 
 	return nil
 }
@@ -86,23 +97,14 @@ func (getter *PfxCertGetter) GetCertificate(ctx context.Context, hello *tls.Clie
 		}
 
 		switch block.Type {
-		case "CERTIFICATE":
-			cert.Certificate = append(cert.Certificate, block.Bytes)
-
-			// If leaf already defined, skip
-			if cert.Leaf != nil {
-				break
-			}
-
-			// Mark first certificate as leaf
-			if cert.Leaf, err = x509.ParseCertificate(block.Bytes); err != nil {
-				return nil, err
-			}
-
 		case "RSA PRIVATE KEY":
 			if cert.PrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
 				return nil, err
 			}
+			break
+		case "CERTIFICATE":
+			cert.Certificate = append(cert.Certificate, block.Bytes)
+			break
 		}
 
 		pemData = rest
@@ -126,11 +128,35 @@ func (getter *PfxCertGetter) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 					return d.ArgErr()
 				}
 				getter.Path = d.Val()
-			} else if key == "password" {
+				continue
+			}
+			if key == "password" {
 				if !d.NextArg() {
 					return d.ArgErr()
 				}
 				getter.Password = d.Val()
+				continue
+			}
+			if key == "fetch_full_chain" {
+				if !d.NextArg() {
+					return d.ArgErr()
+				}
+
+				if d.Val() == "true" {
+					tmp := true
+					getter.FetchFullChain = &tmp
+				} else if d.Val() == "false" {
+					tmp := false
+					getter.FetchFullChain = &tmp
+				} else {
+					return d.Err(d.Val() + " is not a valid value for fetch_full_chain")
+				}
+
+				// Ensure no more arguments
+				if d.NextArg() {
+					return d.ArgErr()
+				}
+				continue
 			} else {
 				return d.Err(key + " not allowed here")
 			}
@@ -178,8 +204,14 @@ func (getter *PfxCertGetter) GenerateParsedKeys(ctx context.Context) error {
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey.(*rsa.PrivateKey)),
 	})...)
 
-	// Append leaf + intermediates certificate
-	for _, caCert := range append([]*x509.Certificate{certificate}, caCerts...) {
+	// Combine leaf and intermediates from PFX and fetch the full chain automatically
+	chain, err := getCertificateChain(append([]*x509.Certificate{certificate}, caCerts...))
+	if err != nil {
+		return err
+	}
+
+	// Append all certificates
+	for _, caCert := range chain {
 		pemData = append(pemData, pem.EncodeToMemory(&pem.Block{
 			Type:  "CERTIFICATE",
 			Bytes: caCert.Raw,

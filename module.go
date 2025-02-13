@@ -14,7 +14,7 @@ import (
 	"log/slog"
 	"os"
 	"software.sslmate.com/src/go-pkcs12"
-	"time"
+	"strconv"
 )
 
 func init() {
@@ -64,9 +64,9 @@ func (getter *PfxCertGetter) Provision(ctx caddy.Context) error {
 	modTime := fileInfo.ModTime()
 
 	if *getter.FetchFullChain {
-		getter.CacheCertName = getter.Path + "." + modTime.Unix() + "-fullchain+pkey.pem"
+		getter.CacheCertName = getter.Path + "." + strconv.FormatInt(modTime.Unix(), 10) + "-fullchain+pkey.pem"
 	} else {
-		getter.CacheCertName = getter.Path + "." + modTime.Unix() + "-chain+pkey.pem"
+		getter.CacheCertName = getter.Path + "." + strconv.FormatInt(modTime.Unix(), 10) + "-chain+pkey.pem"
 	}
 
 	return nil

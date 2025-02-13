@@ -64,9 +64,9 @@ func (getter *PfxCertGetter) Provision(ctx caddy.Context) error {
 	modTime := fileInfo.ModTime()
 
 	if *getter.FetchFullChain {
-		getter.CacheCertName = getter.Path + "." + modTime.Format(time.RFC3339) + "-fullchain+pkey.pem"
+		getter.CacheCertName = getter.Path + "." + modTime.Unix() + "-fullchain+pkey.pem"
 	} else {
-		getter.CacheCertName = getter.Path + "." + modTime.Format(time.RFC3339) + "-chain+pkey.pem"
+		getter.CacheCertName = getter.Path + "." + modTime.Unix() + "-chain+pkey.pem"
 	}
 
 	return nil
